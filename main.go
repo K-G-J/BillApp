@@ -1,33 +1,72 @@
 package main
 
 import (
+	"bufio"
 	"fmt"
+	"os"
+	"strconv"
 	"strings"
 )
 
-func getInitals(n string) (string, string) {
-	s := strings.ToUpper(n)
-	names := strings.Split(s, " ")
+func getInput(prompt string, r *bufio.Reader) (string, error) {
+	fmt.Print(prompt)
+	input, err := r.ReadString('\n') // read up until they press enter key
 
-	var initials []string
-	for _, v := range names {
-		initials = append(initials, v[:1])
+	return strings.TrimSpace(input), err
+}
+
+func createBill() bill {
+	reader := bufio.NewReader(os.Stdin) // create new reader to read input from the terminal
+
+	name, _ := getInput("Create a new bill name: ", reader)
+
+	b := newBill(name)
+	fmt.Println("Created the bill - ", b.name)
+
+	return b
+}
+
+func promptOptions(b bill) {
+	reader := bufio.NewReader(os.Stdin)
+
+	opt, _ := getInput("Choose option (a - add item, s - save bill, t - add tip): ", reader)
+
+	switch opt {
+	case "a":
+		name, _ := getInput("Item name: ", reader)
+		price, _ := getInput("Item price: ", reader)
+
+		p, err := strconv.ParseFloat(price, 64) // parse price into float64
+		if err != nil {
+			fmt.Println("The price must be a number")
+			promptOptions(b)
+		}
+		b.addItem(name, p)
+
+		fmt.Println("item added - ", name, price)
+		promptOptions(b)
+	case "t":
+		tip, _ := getInput("Enter tip amount ($): ", reader)
+
+		t, err := strconv.ParseFloat(tip, 64) // parse tip amount into float64
+		if err != nil {
+			fmt.Println("The tip must be a number")
+			promptOptions(b)
+		}
+		b.updateTip(t)
+
+		fmt.Println("tip added - ", tip)
+		promptOptions(b)
+	case "s":
+		b.save()
+		fmt.Println("you saved the file - ", b.name)
+	default:
+		fmt.Println("that was not a valid option...")
+		promptOptions(b) // reprompt the user
 	}
-
-	if len(initials) > 1 {
-		return initials[0], initials[1]
-	}
-
-	return initials[0], "_"
 }
 
 func main() {
-	fn1, sn1 := getInitals("tifa lockhart")
-	fmt.Println(fn1, sn1)
-
-	fn2, sn2 := getInitals("cloud strife")
-	fmt.Println(fn2, sn2)
-
-	fn3, sn3 := getInitals("barret")
-	fmt.Println(fn3, sn3)
+	myBill := createBill()
+	promptOptions(myBill)
 }
